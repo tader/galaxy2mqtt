@@ -1,0 +1,8 @@
+{% extends "page.html.j2" %}
+{% block body %}
+<div class="card">
+<code><pre>{{ handler.url }}</pre></code>
+<code><pre>{{ handler.query }}</pre></code>
+<code><pre>{{ handler.headers }}</pre></code>
+</div>
+{% endblock %}

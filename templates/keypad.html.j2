@@ -1,0 +1,9 @@
+{% for device in devices %}
+{% if device.screen %}
+<div class="card p-0" style="background-color: #00E051; max-width:190px;">
+<pre class="m-0 p-3" style="font-family: 'VT323', monospace; font-size: 24px; line-height: 1; color: #003300;">
+{{ device.screen[:16].decode('ascii') }}
+{{ device.screen[16:].decode('ascii') }}</pre>
+</div>
+{% endif %}
+{% endfor %}

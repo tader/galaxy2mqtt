@@ -1,0 +1,82 @@
+{% extends "page.html.j2" %}
+{% block body %}
+<div class="card">
+  <div class="table-responsive mt-1">
+	<table class="table align-middle">
+	<thead>
+		<tr>
+			<th>#</th>
+			<th>Image</th>
+			<th>Name</th>
+			<th>Address</th>
+			<th>Alarm</th>
+			<th>Tamper</th>
+			<th>RSSI</th>
+			<th>Seen</th>
+			<th>Actions</th>
+		</tr>
+	<tbody>
+	{% for sensor in state.values() |sort(attribute='last_seen', reverse=True) %}
+	{% set name = sensor['name'] |default(sensor['type'] + 'X' + sensor['address']) %}
+		<tr>
+			<td class="font-weight-bold">{{ loop.index }}</td>
+			<td>
+			<img height="50" src="{{ handler.get_path('static')  }}/images/0x{{ sensor['type'] }}.jpg" />
+			</td>
+			<td>{{ name }}</td>
+			<td>0x{{ sensor['address'] }}</td>
+			<td>
+			  {% if sensor.get('attributes', {}).get('alarm') %}
+			    <span class="badge bg-danger">Alarm</span>
+			  {% else %}
+			    <span class="badge bg-success">OK</span>
+			  {% endif %}
+			</td>
+			<td>
+			  {% if sensor.get('attributes', {}).get('tamper') %}
+			    <span class="badge bg-danger">Tamper</span>
+			  {% else %}
+			    <span class="badge bg-success">OK</span>
+			  {% endif %}
+			</td>
+
+			<td style="font-size: 150%">
+				{% set lqi = sensor.get('attributes', {}).get('linkquality') %}
+				{% if lqi >= 90 %}
+					{% set level = '3' %}
+				{% elif lqi >= 60 %}
+					{% set level = '2' %}
+				{% elif lqi > 30 %}
+					{% set level = '1' %}
+				{% else %}
+					{% set level = 'outline' %}
+				{% endif %}
+				<div class="mdi mdi-signal-cellular-{{ level }}" title="{{ lqi }}%"></div>
+			</td>
+			<td>{{ (now|int - sensor['last_seen']) |int }} s</td>
+			<td>
+			  <div class="btn-group btn-group-sm" role="group">
+			    {% if sensor['joined'] %}
+			    <button onclick="rename_device(this)" data-device-name="{{ name }}" data-device-type="{{ sensor['type'] }}" data-device-address="{{ sensor['address'] }}" type="button" class="btn btn-primary" title="Rename device">
+			      <i class="fa fa-edit"></i>
+			    </button>
+			    <button onclick="delete_device(this, 'DELETE')" data-device-type="{{ sensor['type'] }}" data-device-address="{{ sensor['address'] }}" type="button" class="btn btn-danger" title="Delete device">
+			      <i class="fa fa-unlink"></i>
+			    </button>
+			    {% else %}
+			    <button onclick="delete_device(this, 'PUT')" data-device-type="{{ sensor['type'] }}" data-device-address="{{ sensor['address'] }}" type="button" class="btn btn-success" title="Add device">
+			      <i class="fa fa-link"></i>
+			    </button>
+			    <!--button onclick="delete_device(this, 'DELETE')" data-device-type="{{ sensor['type'] }}" data-device-address="{{ sensor['address'] }}" type="button" class="btn btn-danger" title="Add device">
+			      <i class="fa fa-trash"></i>
+			    </button-->
+			    {% endif %}
+			  </div>
+			</td>
+		</tr>
+	{% endfor %}
+	</tbody>
+	</table>
+  </div>
+</div>
+{% endblock %}

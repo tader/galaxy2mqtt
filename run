@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cd /share/galaxy2mqtt
+exec /usr/bin/python3 /share/galaxy2mqtt/galaxy2mqtt.py
