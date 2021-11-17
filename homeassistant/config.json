@@ -1,0 +1,81 @@
+{
+  "name": "Galaxy2mqtt",
+  "version": "0.0.2.2",
+  "slug": "galaxy2mqtt",
+  "description": "Bridiging the Honywell Galaxy Home-Security System's RS-485 bus to MQTT",
+  "ingress": true,
+  "ingress_port": 8099,
+  "panel_icon": "mdi:alarm-panel-outline",
+  "panel_title": "Galaxy2mqtt",
+  "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
+  "startup": "application",
+  "uart": true,
+  "backup_exclude": [
+	  "**/*"
+  ],
+  "map": [
+	  "share:rw",
+	  "config:rw"
+  ],
+  "services": [
+	  "mqtt:need"
+  ],
+  "boot": "auto",
+  "host_network": true,
+  "options": {
+    "mqtt": {
+	    "base_discovery_topic": "homeassistant",
+	    "base_topic": "galaxyrs485",
+	    "server": "core-mosquitto",
+	    "user": "homeassistant",
+	    "password": null
+    },
+    "devices": [
+      {
+        "type": "JustLog"
+      },
+      {
+        "type": "RFPortal",
+        "address": 133
+      }
+    ],
+    "serial": {
+	    "port": null
+    },
+    "availability": {},
+    "web": {}
+  },
+  "schema": {
+    "mqtt": {
+	    "base_discovery_topic": "str?",
+	    "base_topic": "str?",
+	    "server": "str",
+	    "port": "int(0,65535)?",
+	    "user": "str",
+	    "password": "str",
+	    "timeout": "float(0,)?"
+    },
+    "serial": {
+	    "port": "device(subsystem=tty)",
+	    "baudrate": "int?"
+    },
+    "devices": [
+      {
+        "type": "str",
+        "address": "int(0,)?"
+      }
+    ],
+    "availability": {
+      "expire_after": "int(60,)?",
+      "publish_interval": "int(10,)?"
+    },
+    "web": {
+      "host": "str?",
+      "port": "int(0,65535)?"
+    }
+  },
+  "map": [
+    "share:rw"
+  ],
+  "webui": "[PROTO:option_name]://[HOST]:[PORT:8000]/"
+}
