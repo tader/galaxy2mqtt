@@ -11,7 +11,7 @@ export function numberToBytes(number: number): Uint8Array {
     return new Uint8Array(bytes);
 }
 
-export function calculate(data: Uint8Array): Number {
+export function calculate(data: Buffer | Uint8Array): Number {
     const sum1 = data.reduce(
         (previousValue, currentValue) => previousValue + currentValue,
         0xaa
@@ -23,4 +23,13 @@ export function calculate(data: Uint8Array): Number {
     );
 
     return sum2 & 0xFF;
+}
+
+export function validate(data: Buffer | Uint8Array): boolean {
+    if (data.length < 2) return false;
+
+    const head = data.slice(0, data.length - 1);
+    const tail = data[data.length - 1];
+
+    return calculate(head) == tail;
 }

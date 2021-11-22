@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import { nextTick } from 'process';
+import * as checksum from './checksum';
 
 export class BaseDevice {
     device_address: number;
@@ -46,11 +47,13 @@ export class PassiveDevice extends BaseDevice {
                 reqByteOffset + 6
             )
 
-            // must check checksums
-            // allow others to run in between checks
-            // assuming req and res are valid:
-            this.buffer = this.buffer.slice(reqByteOffset + 6)
-            this.emitter.emit('parsed', req, res);
+            if (checksum.validate(req) && checksum.validate(res)) {
+                // must check checksums
+                // allow others to run in between checks
+                // assuming req and res are valid:
+                this.buffer = this.buffer.slice(reqByteOffset + 6)
+                this.emitter.emit('parsed', req, res);
+            }
         }
 
         // else, nextTick(() => { this.parseReqFrom(reqByteOffset + 1) });
