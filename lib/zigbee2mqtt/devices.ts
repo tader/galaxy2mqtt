@@ -9,6 +9,8 @@ export class BaseDevice {
     emitter: EventEmitter;
     buffer: Buffer;
 
+    minimumPacketLength = 3;
+
     constructor(device_address: number, panel_address = 0x11) {
         this.device_address = device_address;
         this.panel_address = panel_address;
@@ -31,13 +33,63 @@ export class BaseDevice {
 
 export class PassiveDevice extends BaseDevice {
     parse() {
-        nextTick(() => { this.parseReqFrom() });
+        this.findRequestResponse();
+
+        // if buffer way too long remove first byte
+        if (this.buffer.length > 40) {
+            this.buffer = this.buffer.slice(1);
+        }
+    }
+
+    seekPossibleStartOfPacket(): boolean {
+        const requestOffset = this.buffer.indexOf(this.device_address);
+
+        if (requestOffset <= 0) {
+            this.buffer = Buffer.from([]);
+            return false;
+        }
+
+        this.buffer = this.buffer.slice(requestOffset);
+        if (this.buffer.length < this.minimumPacketLength * 2) return false;
+
+        return true;
+    }
+
+    findRequestResponse(): {request:Buffer, response:Buffer} | void {        
+        if (!this.seekPossibleStartOfPacket()) return;
+
+        // try all possible response starts
+        var responseOffset = this.minimumPacketLength - 1;
+        while (true) {
+            responseOffset = this.buffer.indexOf(this.panel_address, responseOffset + 1);
+            if (responseOffset < 0) break;
+            if (responseOffset + this.minimumPacketLength > this.buffer.length) break;
+
+            const request = this.buffer.slice(0, responseOffset);
+
+            if (!checksum.validate(request)) continue;
+
+            // try all possible response lengths
+            for (
+                var responseEnd = responseOffset + this.minimumPacketLength;
+                responseEnd <= this.buffer.length;
+                responseEnd++
+            ) {
+                const response = this.buffer.slice(responseOffset, responseEnd);
+                if (checksum.validate(response)) {
+                    this.buffer = this.buffer.slice(responseEnd)
+                    return {request:request, response: response};
+                }
+            }
+        }
     }
 
     parseReqFrom(offset = 0) {
         var reqByteOffset = this.buffer.indexOf(this.device_address, offset);
 
         if (reqByteOffset >= 0) {
+            var found = false;
+
             const req = this.buffer.slice(
                 reqByteOffset,
                 reqByteOffset + 3
@@ -48,16 +100,16 @@ export class PassiveDevice extends BaseDevice {
             )
 
             if (checksum.validate(req) && checksum.validate(res)) {
-                // must check checksums
-                // allow others to run in between checks
-                // assuming req and res are valid:
                 this.buffer = this.buffer.slice(reqByteOffset + 6)
                 this.emitter.emit('parsed', req, res);
+                found = true;
+            }
+
+            if (!found) {
+                nextTick(() => { this.parseReqFrom(reqByteOffset + 1) });
             }
         }
-
-        // else, nextTick(() => { this.parseReqFrom(reqByteOffset + 1) });
-    } 
+    }
 }
 
 export class ActiveDevice extends BaseDevice {
